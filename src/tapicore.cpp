@@ -21,10 +21,12 @@ TapiCore::TapiCore(ros::NodeHandle* nh) : nh(nh)
   heartbeatCheckTimer.start();
   delSub = nh->subscribe("Tapi/DeleteConnection", 1000, &TapiCore::deleteConnection, this);
   clearSub = nh->subscribe("Tapi/Clear", 1, &TapiCore::clear, this);
+  connectSub = nh->subscribe("Tapi/ConnectFeatures", 1, &TapiCore::connectFeatures, this);
 }
 
 TapiCore::~TapiCore()
 {
+  connectSub.shutdown();
   helloServ.shutdown();
   lastChangedPub.shutdown();
   configPub.shutdown();
@@ -35,55 +37,6 @@ TapiCore::~TapiCore()
 }
 
 // Public member functions
-
-bool TapiCore::ConnectFeatures(string feature1uuid, string feature2uuid, double coefficient)
-{
-  Tapi::Device *device1, *device2;
-  device1 = getDeviceByFeatureUUID(feature1uuid);
-  device2 = getDeviceByFeatureUUID(feature2uuid);
-  if (device1 == 0 || device2 == 0)
-    // At least one Device not found
-    return false;
-  if (device1->GetType() == device2->GetType())
-    // Cannont connect devices of same type (sender-sender or receiver-receiver)
-    return false;
-  if (device1->GetFeatureByUUID(feature1uuid)->GetType() != device2->GetFeatureByUUID(feature2uuid)->GetType())
-    // Cannot connect features of different types
-    return false;
-
-  // Who is sender, who receiver?
-  string senderUUID, receiverUUID, senderFeatureUUID, receiverFeatureUUID;
-  if (device1->GetType() == tapi_msgs::HelloRequest::Type_ReceiverDevice)
-  {
-    receiverUUID = device1->GetUUID();
-    receiverFeatureUUID = feature1uuid;
-    senderUUID = device2->GetUUID();
-    senderFeatureUUID = feature2uuid;
-  }
-  else
-  {
-    receiverUUID = device2->GetUUID();
-    receiverFeatureUUID = feature2uuid;
-    senderUUID = device1->GetUUID();
-    senderFeatureUUID = feature1uuid;
-  }
-
-  if (connections.count(receiverFeatureUUID) > 0)
-    // Old connection was not removed before reassigning!
-    return false;
-  else
-  {
-    // Connect devices/features
-    Tapi::Connection connection(senderUUID, senderFeatureUUID, receiverUUID, receiverFeatureUUID, coefficient);
-    connections.emplace(receiverFeatureUUID, connection);
-    device1->GetFeatureByUUID(feature1uuid)->IncrementConnections();
-    device2->GetFeatureByUUID(feature2uuid)->IncrementConnections();
-    changed();
-    return true;
-  }
-  // "Error" handler - should never be reached:
-  return false;
-}
 
 vector<Tapi::Connection*> TapiCore::GetConnections()
 {
@@ -131,6 +84,54 @@ void TapiCore::clear(const std_msgs::Bool::ConstPtr& cl)
 bool TapiCore::compareDeviceNames(const Tapi::Device* first, const Tapi::Device* second)
 {
   return first->GetName() < second->GetName();
+}
+
+void TapiCore::connectFeatures(const tapi_msgs::Connect::ConstPtr& con)
+{
+  string feature1uuid, feature2uuid;
+  double coefficient;
+  feature1uuid = con->Feature1UUID;
+  feature2uuid = con->Feature2UUID;
+  coefficient = con->Coefficient;
+  Tapi::Device *device1, *device2;
+  device1 = getDeviceByFeatureUUID(feature1uuid);
+  device2 = getDeviceByFeatureUUID(feature2uuid);
+  if (device1 == 0 || device2 == 0)
+    // At least one Device not found
+    return;
+  if (device1->GetType() == device2->GetType())
+    // Cannont connect devices of same type (sender-sender or receiver-receiver)
+    return;
+  if (device1->GetFeatureByUUID(feature1uuid)->GetType() != device2->GetFeatureByUUID(feature2uuid)->GetType())
+    // Cannot connect features of different types
+    return;
+
+  // Who is sender, who receiver?
+  string senderUUID, receiverUUID, senderFeatureUUID, receiverFeatureUUID;
+  if (device1->GetType() == tapi_msgs::HelloRequest::Type_ReceiverDevice)
+  {
+    receiverUUID = device1->GetUUID();
+    receiverFeatureUUID = feature1uuid;
+    senderUUID = device2->GetUUID();
+    senderFeatureUUID = feature2uuid;
+  }
+  else
+  {
+    receiverUUID = device2->GetUUID();
+    receiverFeatureUUID = feature2uuid;
+    senderUUID = device1->GetUUID();
+    senderFeatureUUID = feature1uuid;
+  }
+
+  if (connections.count(receiverFeatureUUID) == 0)
+  {
+    // Old connection was removed before reassigning so connect devices/features
+    Tapi::Connection connection(senderUUID, senderFeatureUUID, receiverUUID, receiverFeatureUUID, coefficient);
+    connections.emplace(receiverFeatureUUID, connection);
+    device1->GetFeatureByUUID(feature1uuid)->IncrementConnections();
+    device2->GetFeatureByUUID(feature2uuid)->IncrementConnections();
+    changed();
+  }
 }
 
 void TapiCore::debugOutput()
