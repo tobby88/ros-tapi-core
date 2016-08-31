@@ -25,7 +25,6 @@ public:
   // Public member functions
   void Clear();
   bool ConnectFeatures(std::string feature1UUID, std::string feature2UUID, double coefficient);
-  void DebugOutput();
   bool DeleteConnection(std::string receiverFeatureUUID);
   std::vector<Tapi::Connection*> GetConnections();
   std::vector<Tapi::Device*> GetDevicesSorted();
@@ -43,6 +42,7 @@ private:
   // Private member functions
   void changed();
   static bool compareDeviceNames(const Tapi::Device* first, const Tapi::Device* second);
+  void debugOutput();
   Tapi::Device* getDeviceByFeatureUUID(std::string uuid);
   void heartbeatCheck(const ros::TimerEvent& e);
   bool hello(tapi_msgs::Hello::Request& helloReq, tapi_msgs::Hello::Response& helloResp);

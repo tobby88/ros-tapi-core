@@ -90,24 +90,6 @@ bool TapiCore::ConnectFeatures(string feature1uuid, string feature2uuid, double 
   return false;
 }
 
-void TapiCore::DebugOutput()
-{
-  for (auto it = devices.begin(); it != devices.end(); ++it)
-  {
-    ROS_INFO("Debug: Device-Element UUID: %s", it->first.c_str());
-    ROS_INFO("Debug: Device-Data: Type: %d, Name: %s, UUID: %s, Last Seq: %lu, Last Seen: %f, Heartbeat-Interval: %lu",
-             (unsigned int)it->second.GetType(), it->second.GetName().c_str(), it->second.GetUUID().c_str(),
-             it->second.GetLastSeq(), it->second.GetLastSeen().toSec(), it->second.GetHeartbeat());
-    vector<Tapi::Feature*> features = it->second.GetSortedFeatures();
-    for (auto it2 = features.begin(); it2 != features.end(); ++it2)
-    {
-      ROS_INFO("Debug: Device-Feature: ID: %s, Feature-Type: %s, Feature-Name: %s", (*it2)->GetUUID().c_str(),
-               (*it2)->GetType().c_str(), (*it2)->GetName().c_str());
-    }
-  }
-  // TODO: Print connections
-}
-
 bool TapiCore::DeleteConnection(string receiverFeatureUUID)
 {
   if (connections.count(receiverFeatureUUID) > 0)
@@ -158,13 +140,31 @@ void TapiCore::changed()
   lastChangedPub.publish(timemsg);
   sendAllConnections();
 #ifdef DEBUG
-  DebugOutput();
+  debugOutput();
 #endif
 }
 
 bool TapiCore::compareDeviceNames(const Tapi::Device* first, const Tapi::Device* second)
 {
   return first->GetName() < second->GetName();
+}
+
+void TapiCore::debugOutput()
+{
+  for (auto it = devices.begin(); it != devices.end(); ++it)
+  {
+    ROS_INFO("Debug: Device-Element UUID: %s", it->first.c_str());
+    ROS_INFO("Debug: Device-Data: Type: %d, Name: %s, UUID: %s, Last Seq: %lu, Last Seen: %f, Heartbeat-Interval: %lu",
+             (unsigned int)it->second.GetType(), it->second.GetName().c_str(), it->second.GetUUID().c_str(),
+             it->second.GetLastSeq(), it->second.GetLastSeen().toSec(), it->second.GetHeartbeat());
+    vector<Tapi::Feature*> features = it->second.GetSortedFeatures();
+    for (auto it2 = features.begin(); it2 != features.end(); ++it2)
+    {
+      ROS_INFO("Debug: Device-Feature: ID: %s, Feature-Type: %s, Feature-Name: %s", (*it2)->GetUUID().c_str(),
+               (*it2)->GetType().c_str(), (*it2)->GetName().c_str());
+    }
+  }
+  // TODO: Print connections
 }
 
 Tapi::Device* TapiCore::getDeviceByFeatureUUID(string uuid)
