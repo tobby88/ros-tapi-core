@@ -19,6 +19,7 @@ TapiCore::TapiCore(ros::NodeHandle* nh) : nh(nh)
   heartbeatCheckTimer =
       nh->createTimer(ros::Duration(HEARTBEAT_CHECK_INTERVAL / 1000.0), &TapiCore::heartbeatCheck, this);
   heartbeatCheckTimer.start();
+  delSub = nh->subscribe("Tapi/DeleteConnection", 1000, &TapiCore::deleteConnection, this);
   clearSub = nh->subscribe("Tapi/Clear", 1, &TapiCore::clear, this);
 }
 
@@ -28,6 +29,7 @@ TapiCore::~TapiCore()
   lastChangedPub.shutdown();
   configPub.shutdown();
   heartbeatCheckTimer.stop();
+  delSub.shutdown();
   clearSub.shutdown();
   ROS_INFO("Hello-Service has been stopped.");
 }
@@ -83,29 +85,6 @@ bool TapiCore::ConnectFeatures(string feature1uuid, string feature2uuid, double 
   return false;
 }
 
-bool TapiCore::DeleteConnection(string receiverFeatureUUID)
-{
-  if (connections.count(receiverFeatureUUID) > 0)
-  {
-    Tapi::Connection* connection = &connections.at(receiverFeatureUUID);
-    string senderUUID = connection->GetSenderUUID();
-    string senderFeatureUUID = connection->GetSenderFeatureUUID();
-    string receiverUUID = connection->GetReceiverUUID();
-    if (devices.count(senderUUID) > 0)
-      devices.at(senderUUID).GetFeatureByUUID(senderFeatureUUID)->DecrementConnections();
-    if (devices.count(receiverUUID) > 0)
-      devices.at(receiverUUID).GetFeatureByUUID(receiverFeatureUUID)->DecrementConnections();
-    tapi_msgs::Config msg;
-    msg.SenderUUID = "0";
-    msg.SenderFeatureUUID = "0";
-    msg.ReceiverUUID = receiverUUID;
-    msg.ReceiverFeatureUUID = receiverFeatureUUID;
-    msg.Coefficient = 0;
-    configPub.publish(msg);
-    connections.erase(receiverFeatureUUID);
-  }
-}
-
 vector<Tapi::Connection*> TapiCore::GetConnections()
 {
   vector<Tapi::Connection*> connectionList;
@@ -142,7 +121,7 @@ void TapiCore::clear(const std_msgs::Bool::ConstPtr& cl)
   if (cl->data)
   {
     for (auto it = connections.begin(); it != connections.end(); ++it)
-      DeleteConnection(it->second.GetReceiverFeatureUUID());
+      deleteConnection(it->second.GetReceiverFeatureUUID());
     connections.clear();
     devices.clear();
     changed();
@@ -170,6 +149,35 @@ void TapiCore::debugOutput()
     }
   }
   // TODO: Print connections
+}
+
+void TapiCore::deleteConnection(const std_msgs::String::ConstPtr& del)
+{
+  string receiverFeatureUUID = del->data;
+  deleteConnection(receiverFeatureUUID);
+}
+
+void TapiCore::deleteConnection(std::string receiverFeatureUUID)
+{
+  if (connections.count(receiverFeatureUUID) > 0)
+  {
+    Tapi::Connection* connection = &connections.at(receiverFeatureUUID);
+    string senderUUID = connection->GetSenderUUID();
+    string senderFeatureUUID = connection->GetSenderFeatureUUID();
+    string receiverUUID = connection->GetReceiverUUID();
+    if (devices.count(senderUUID) > 0)
+      devices.at(senderUUID).GetFeatureByUUID(senderFeatureUUID)->DecrementConnections();
+    if (devices.count(receiverUUID) > 0)
+      devices.at(receiverUUID).GetFeatureByUUID(receiverFeatureUUID)->DecrementConnections();
+    tapi_msgs::Config msg;
+    msg.SenderUUID = "0";
+    msg.SenderFeatureUUID = "0";
+    msg.ReceiverUUID = receiverUUID;
+    msg.ReceiverFeatureUUID = receiverFeatureUUID;
+    msg.Coefficient = 0;
+    configPub.publish(msg);
+    connections.erase(receiverFeatureUUID);
+  }
 }
 
 Tapi::Device* TapiCore::getDeviceByFeatureUUID(string uuid)

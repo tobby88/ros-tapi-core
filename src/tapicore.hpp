@@ -12,6 +12,7 @@
 #include "device.hpp"
 #include "ros/ros.h"
 #include "std_msgs/Bool.h"
+#include "std_msgs/String.h"
 #include "tapi_msgs/Hello.h"
 
 namespace Tapi
@@ -25,7 +26,6 @@ public:
 
   // Public member functions
   bool ConnectFeatures(std::string feature1UUID, std::string feature2UUID, double coefficient);
-  bool DeleteConnection(std::string receiverFeatureUUID);
   std::vector<Tapi::Connection*> GetConnections();
   std::vector<Tapi::Device*> GetDevicesSorted();
 
@@ -34,6 +34,7 @@ private:
   ros::Subscriber clearSub;
   ros::Publisher configPub;
   std::map<std::string, Tapi::Connection> connections;
+  ros::Subscriber delSub;
   std::map<std::string, Tapi::Device> devices;
   ros::Timer heartbeatCheckTimer;
   ros::ServiceServer helloServ;
@@ -45,6 +46,8 @@ private:
   void clear(const std_msgs::Bool::ConstPtr& cl);
   static bool compareDeviceNames(const Tapi::Device* first, const Tapi::Device* second);
   void debugOutput();
+  void deleteConnection(const std_msgs::String::ConstPtr& del);
+  void deleteConnection(std::string receiverFeatureUUID);
   Tapi::Device* getDeviceByFeatureUUID(std::string uuid);
   void heartbeatCheck(const ros::TimerEvent& e);
   bool hello(tapi_msgs::Hello::Request& helloReq, tapi_msgs::Hello::Response& helloResp);
