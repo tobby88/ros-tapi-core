@@ -11,6 +11,7 @@
 #include "connection.hpp"
 #include "device.hpp"
 #include "ros/ros.h"
+#include "std_msgs/Bool.h"
 #include "tapi_msgs/Hello.h"
 
 namespace Tapi
@@ -23,7 +24,6 @@ public:
   ~TapiCore();
 
   // Public member functions
-  void Clear();
   bool ConnectFeatures(std::string feature1UUID, std::string feature2UUID, double coefficient);
   bool DeleteConnection(std::string receiverFeatureUUID);
   std::vector<Tapi::Connection*> GetConnections();
@@ -31,6 +31,7 @@ public:
 
 private:
   // Private member variables
+  ros::Subscriber clearSub;
   ros::Publisher configPub;
   std::map<std::string, Tapi::Connection> connections;
   std::map<std::string, Tapi::Device> devices;
@@ -41,6 +42,7 @@ private:
 
   // Private member functions
   void changed();
+  void clear(const std_msgs::Bool::ConstPtr& cl);
   static bool compareDeviceNames(const Tapi::Device* first, const Tapi::Device* second);
   void debugOutput();
   Tapi::Device* getDeviceByFeatureUUID(std::string uuid);

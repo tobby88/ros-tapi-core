@@ -19,6 +19,7 @@ TapiCore::TapiCore(ros::NodeHandle* nh) : nh(nh)
   heartbeatCheckTimer =
       nh->createTimer(ros::Duration(HEARTBEAT_CHECK_INTERVAL / 1000.0), &TapiCore::heartbeatCheck, this);
   heartbeatCheckTimer.start();
+  clearSub = nh->subscribe("Tapi/Clear", 1, &TapiCore::clear, this);
 }
 
 TapiCore::~TapiCore()
@@ -31,15 +32,6 @@ TapiCore::~TapiCore()
 }
 
 // Public member functions
-
-void TapiCore::Clear()
-{
-  for (auto it = connections.begin(); it != connections.end(); ++it)
-    DeleteConnection(it->second.GetReceiverFeatureUUID());
-  connections.clear();
-  devices.clear();
-  changed();
-}
 
 bool TapiCore::ConnectFeatures(string feature1uuid, string feature2uuid, double coefficient)
 {
@@ -142,6 +134,18 @@ void TapiCore::changed()
 #ifdef DEBUG
   debugOutput();
 #endif
+}
+
+void TapiCore::clear(const std_msgs::Bool::ConstPtr& cl)
+{
+  if (cl->data)
+  {
+    for (auto it = connections.begin(); it != connections.end(); ++it)
+      DeleteConnection(it->second.GetReceiverFeatureUUID());
+    connections.clear();
+    devices.clear();
+    changed();
+  }
 }
 
 bool TapiCore::compareDeviceNames(const Tapi::Device* first, const Tapi::Device* second)
