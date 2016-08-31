@@ -15,7 +15,6 @@ public:
   // Public member functions
   void DecrementConnections();
   int GetConnectionCount();
-  std::string GetDescription() const;
   std::string GetName() const;
   std::string GetType() const;
   std::string GetUUID() const;
