@@ -24,6 +24,7 @@ TapiCore::TapiCore(ros::NodeHandle* nh) : nh(nh)
   clearSub = nh->subscribe("Tapi/Clear", 1, &TapiCore::clear, this);
   connectSub = nh->subscribe("Tapi/ConnectFeatures", 1, &TapiCore::connectFeatures, this);
   getDevsServ = nh->advertiseService("Tapi/GetDeviceList", &TapiCore::getDevicesSorted, this);
+  getConnsServ = nh->advertiseService("Tapi/GetConnectionList", &TapiCore::getConnectionList, this);
 }
 
 TapiCore::~TapiCore()
@@ -36,17 +37,8 @@ TapiCore::~TapiCore()
   delSub.shutdown();
   clearSub.shutdown();
   getDevsServ.shutdown();
+  getConnsServ.shutdown();
   ROS_INFO("Hello-Service has been stopped.");
-}
-
-// Public member functions
-
-vector<Tapi::Connection*> TapiCore::GetConnections()
-{
-  vector<Tapi::Connection*> connectionList;
-  for (auto it = connections.begin(); it != connections.end(); ++it)
-    connectionList.push_back(&it->second);
-  return connectionList;
 }
 
 // Private memeber functions
@@ -125,6 +117,32 @@ void TapiCore::connectFeatures(const tapi_msgs::Connect::ConstPtr& con)
     device2->GetFeatureByUUID(feature2uuid)->IncrementConnections();
     changed();
   }
+}
+
+bool TapiCore::getConnectionList(tapi_msgs::GetConnectionList::Request& listReq,
+                                 tapi_msgs::GetConnectionList::Response& listResp)
+{
+  if (listReq.get)
+  {
+    vector<Tapi::Connection*> connectionVec;
+    for (auto it = connections.begin(); it != connections.end(); ++it)
+      connectionVec.push_back(&it->second);
+    vector<tapi_msgs::Connection> msg;
+    for (auto it = connectionVec.begin(); it != connectionVec.end(); ++it)
+    {
+      tapi_msgs::Connection connection;
+      connection.Coefficient = (*it)->GetCoefficient();
+      connection.ReceiverFeatureUUID = (*it)->GetReceiverFeatureUUID();
+      connection.ReceiverUUID = (*it)->GetReceiverUUID();
+      connection.SenderFeatureUUID = (*it)->GetSenderFeatureUUID();
+      connection.SenderUUID = (*it)->GetSenderUUID();
+      msg.push_back(connection);
+    }
+    listResp.Connections = msg;
+    return true;
+  }
+  else
+    return false;
 }
 
 void TapiCore::debugOutput()

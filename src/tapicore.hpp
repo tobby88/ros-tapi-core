@@ -14,6 +14,7 @@
 #include "std_msgs/Bool.h"
 #include "std_msgs/String.h"
 #include "tapi_msgs/Connect.h"
+#include "tapi_msgs/GetConnectionList.h"
 #include "tapi_msgs/GetDeviceList.h"
 #include "tapi_msgs/Hello.h"
 
@@ -26,9 +27,6 @@ public:
   explicit TapiCore(ros::NodeHandle* nh);
   ~TapiCore();
 
-  // Public member functions
-  std::vector<Tapi::Connection*> GetConnections();
-
 private:
   // Private member variables
   ros::Subscriber clearSub;
@@ -37,6 +35,7 @@ private:
   ros::Subscriber connectSub;
   ros::Subscriber delSub;
   std::map<std::string, Tapi::Device> devices;
+  ros::ServiceServer getConnsServ;
   ros::ServiceServer getDevsServ;
   ros::Timer heartbeatCheckTimer;
   ros::ServiceServer helloServ;
@@ -51,6 +50,8 @@ private:
   void debugOutput();
   void deleteConnection(const std_msgs::String::ConstPtr& del);
   void deleteConnection(std::string receiverFeatureUUID);
+  bool getConnectionList(tapi_msgs::GetConnectionList::Request& listReq,
+                         tapi_msgs::GetConnectionList::Response& listResp);
   Tapi::Device* getDeviceByFeatureUUID(std::string uuid);
   bool getDevicesSorted(tapi_msgs::GetDeviceList::Request& listReq, tapi_msgs::GetDeviceList::Response& listResp);
   void heartbeatCheck(const ros::TimerEvent& e);
