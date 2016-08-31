@@ -2,6 +2,7 @@
 #include "feature.hpp"
 #include "std_msgs/Time.h"
 #include "tapi_msgs/Config.h"
+#include "tapi_msgs/Device.h"
 #include "tapi_msgs/Feature.h"
 
 using namespace std;
@@ -22,6 +23,7 @@ TapiCore::TapiCore(ros::NodeHandle* nh) : nh(nh)
   delSub = nh->subscribe("Tapi/DeleteConnection", 1000, &TapiCore::deleteConnection, this);
   clearSub = nh->subscribe("Tapi/Clear", 1, &TapiCore::clear, this);
   connectSub = nh->subscribe("Tapi/ConnectFeatures", 1, &TapiCore::connectFeatures, this);
+  getDevsServ = nh->advertiseService("Tapi/GetDeviceList", &TapiCore::getDevicesSorted, this);
 }
 
 TapiCore::~TapiCore()
@@ -33,6 +35,7 @@ TapiCore::~TapiCore()
   heartbeatCheckTimer.stop();
   delSub.shutdown();
   clearSub.shutdown();
+  getDevsServ.shutdown();
   ROS_INFO("Hello-Service has been stopped.");
 }
 
@@ -44,16 +47,6 @@ vector<Tapi::Connection*> TapiCore::GetConnections()
   for (auto it = connections.begin(); it != connections.end(); ++it)
     connectionList.push_back(&it->second);
   return connectionList;
-}
-
-vector<Tapi::Device*> TapiCore::GetDevicesSorted()
-{
-  vector<Tapi::Device*> devicesList;
-  for (auto it = devices.begin(); it != devices.end(); ++it)
-    devicesList.push_back(&it->second);
-  if (devicesList.size() > 1)
-    sort(devicesList.begin(), devicesList.end(), compareDeviceNames);
-  return devicesList;
 }
 
 // Private memeber functions
@@ -189,6 +182,47 @@ Tapi::Device* TapiCore::getDeviceByFeatureUUID(string uuid)
       return &(it->second);
   }
   return 0;
+}
+
+bool TapiCore::getDevicesSorted(tapi_msgs::GetDeviceList::Request& listReq,
+                                tapi_msgs::GetDeviceList::Response& listResp)
+{
+  if (listReq.get)
+  {
+    vector<Tapi::Device*> devicesList;
+    for (auto it = devices.begin(); it != devices.end(); ++it)
+      devicesList.push_back(&it->second);
+    if (devicesList.size() > 1)
+      sort(devicesList.begin(), devicesList.end(), compareDeviceNames);
+    vector<tapi_msgs::Device> answer;
+    for (auto it = devicesList.begin(); it != devicesList.end(); ++it)
+    {
+      tapi_msgs::Device device;
+      device.Active = (*it)->Active();
+      device.DeviceType = (*it)->GetType();
+      device.Heartbeat = (*it)->GetHeartbeat();
+      device.LastSeen = (*it)->GetLastSeen();
+      device.LastSeq = (*it)->GetLastSeq();
+      device.Name = (*it)->GetName();
+      device.UUID = (*it)->GetUUID();
+      vector<Feature*> features = (*it)->GetSortedFeatures();
+      vector<tapi_msgs::Feature> featureMsgs;
+      for (auto it2 = features.begin(); it2 != features.end(); ++it2)
+      {
+        tapi_msgs::Feature featureMsg;
+        featureMsg.FeatureType = (*it2)->GetType();
+        featureMsg.Name = (*it2)->GetName();
+        featureMsg.UUID = (*it2)->GetUUID();
+        featureMsgs.push_back(featureMsg);
+      }
+      device.Features = featureMsgs;
+      answer.push_back(device);
+    }
+    listResp.Devices = answer;
+    return true;
+  }
+  else
+    return false;
 }
 
 void TapiCore::heartbeatCheck(const ros::TimerEvent& e)
