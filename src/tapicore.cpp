@@ -29,15 +29,6 @@ TapiCore::~TapiCore()
 
 // Public member functions
 
-void TapiCore::AddDeviceWithoutHello(uint8_t type, string name, string uuid, unsigned long heartbeat,
-                                map<string, Tapi::Feature> features)
-{
-  Tapi::Device device(type, name, uuid, 0, ros::Time(0.0), heartbeat, features);
-  device.Deactivate();
-  devices.emplace(uuid, device);
-  changed();
-}
-
 bool TapiCore::CheckPending()
 {
   return pendingChanges;
