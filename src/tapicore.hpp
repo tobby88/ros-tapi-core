@@ -23,12 +23,10 @@ public:
   ~TapiCore();
 
   // Public member functions
-  bool CheckPending();
   void Clear();
   bool ConnectFeatures(std::string feature1UUID, std::string feature2UUID, double coefficient);
   void DebugOutput();
   bool DeleteConnection(std::string receiverFeatureUUID);
-  void Done();
   std::vector<Tapi::Connection*> GetConnections();
   std::vector<Tapi::Device*> GetDevicesSorted();
 
@@ -39,8 +37,8 @@ private:
   std::map<std::string, Tapi::Device> devices;
   ros::Timer heartbeatCheckTimer;
   ros::ServiceServer helloServ;
+  ros::Publisher lastChangedPub;
   ros::NodeHandle* nh;
-  bool pendingChanges;
 
   // Private member functions
   void changed();

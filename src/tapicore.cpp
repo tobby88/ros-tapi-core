@@ -1,5 +1,6 @@
 #include "tapicore.hpp"
 #include "feature.hpp"
+#include "std_msgs/Time.h"
 #include "tapi_msgs/Config.h"
 #include "tapi_msgs/Feature.h"
 
@@ -13,8 +14,8 @@ TapiCore::TapiCore(ros::NodeHandle* nh) : nh(nh)
 {
   helloServ = nh->advertiseService("Tapi/HelloServ", &TapiCore::hello, this);
   configPub = nh->advertise<tapi_msgs::Config>("Tapi/Config", 1000);
+  lastChangedPub = nh->advertise<std_msgs::Time>("Tapi/LastChanged", 5);
   ROS_INFO("Started Hello-Service, ready for connections.");
-  pendingChanges = false;
   heartbeatCheckTimer =
       nh->createTimer(ros::Duration(HEARTBEAT_CHECK_INTERVAL / 1000.0), &TapiCore::heartbeatCheck, this);
   heartbeatCheckTimer.start();
@@ -22,18 +23,14 @@ TapiCore::TapiCore(ros::NodeHandle* nh) : nh(nh)
 
 TapiCore::~TapiCore()
 {
-  heartbeatCheckTimer.stop();
   helloServ.shutdown();
+  lastChangedPub.shutdown();
   configPub.shutdown();
+  heartbeatCheckTimer.stop();
   ROS_INFO("Hello-Service has been stopped.");
 }
 
 // Public member functions
-
-bool TapiCore::CheckPending()
-{
-  return pendingChanges;
-}
 
 void TapiCore::Clear()
 {
@@ -134,11 +131,6 @@ bool TapiCore::DeleteConnection(string receiverFeatureUUID)
   }
 }
 
-void TapiCore::Done()
-{
-  pendingChanges = false;
-}
-
 vector<Tapi::Connection*> TapiCore::GetConnections()
 {
   vector<Tapi::Connection*> connectionList;
@@ -161,7 +153,9 @@ vector<Tapi::Device*> TapiCore::GetDevicesSorted()
 
 void TapiCore::changed()
 {
-  pendingChanges = true;
+  std_msgs::Time timemsg;
+  timemsg.data = ros::Time::now();
+  lastChangedPub.publish(timemsg);
   sendAllConnections();
 #ifdef DEBUG
   DebugOutput();
