@@ -1,4 +1,4 @@
-#include "api.hpp"
+#include "tapicore.hpp"
 #include "feature.hpp"
 #include "tapi_msgs/Config.h"
 #include "tapi_msgs/Feature.h"
@@ -9,30 +9,27 @@ namespace Tapi
 {
 // Constructor/Destructor
 
-Api::Api(ros::NodeHandle* nh) : nh(nh)
+TapiCore::TapiCore(ros::NodeHandle* nh) : nh(nh)
 {
-  spinner = new ros::AsyncSpinner(1);
-  helloServ = nh->advertiseService("Tapi/HelloServ", &Api::hello, this);
+  helloServ = nh->advertiseService("Tapi/HelloServ", &TapiCore::hello, this);
   configPub = nh->advertise<tapi_msgs::Config>("Tapi/Config", 1000);
-  ROS_INFO("Started Hello-Service, ready for API-connections.");
+  ROS_INFO("Started Hello-Service, ready for connections.");
   pendingChanges = false;
-  heartbeatCheckTimer = nh->createTimer(ros::Duration(HEARTBEAT_CHECK_INTERVAL / 1000.0), &Api::heartbeatCheck, this);
+  heartbeatCheckTimer = nh->createTimer(ros::Duration(HEARTBEAT_CHECK_INTERVAL / 1000.0), &TapiCore::heartbeatCheck, this);
   heartbeatCheckTimer.start();
 }
 
-Api::~Api()
+TapiCore::~TapiCore()
 {
-  // heartbeatCheckTimer.stop();
+  heartbeatCheckTimer.stop();
   helloServ.shutdown();
   configPub.shutdown();
-  spinner->stop();
-  delete spinner;
   ROS_INFO("Hello-Service has been stopped.");
 }
 
 // Public member functions
 
-void Api::AddDeviceWithoutHello(uint8_t type, string name, string uuid, unsigned long heartbeat,
+void TapiCore::AddDeviceWithoutHello(uint8_t type, string name, string uuid, unsigned long heartbeat,
                                 map<string, Tapi::Feature> features)
 {
   Tapi::Device device(type, name, uuid, 0, ros::Time(0.0), heartbeat, features);
@@ -41,12 +38,12 @@ void Api::AddDeviceWithoutHello(uint8_t type, string name, string uuid, unsigned
   changed();
 }
 
-bool Api::CheckPending()
+bool TapiCore::CheckPending()
 {
   return pendingChanges;
 }
 
-void Api::Clear()
+void TapiCore::Clear()
 {
   for (auto it = connections.begin(); it != connections.end(); ++it)
     DeleteConnection(it->second.GetReceiverFeatureUUID());
@@ -55,7 +52,7 @@ void Api::Clear()
   changed();
 }
 
-bool Api::ConnectFeatures(string feature1uuid, string feature2uuid, double coefficient)
+bool TapiCore::ConnectFeatures(string feature1uuid, string feature2uuid, double coefficient)
 {
   Tapi::Device *device1, *device2;
   device1 = getDeviceByFeatureUUID(feature1uuid);
@@ -104,7 +101,7 @@ bool Api::ConnectFeatures(string feature1uuid, string feature2uuid, double coeff
   return false;
 }
 
-void Api::DebugOutput()
+void TapiCore::DebugOutput()
 {
   for (auto it = devices.begin(); it != devices.end(); ++it)
   {
@@ -122,7 +119,7 @@ void Api::DebugOutput()
   // TODO: Print connections
 }
 
-bool Api::DeleteConnection(string receiverFeatureUUID)
+bool TapiCore::DeleteConnection(string receiverFeatureUUID)
 {
   if (connections.count(receiverFeatureUUID) > 0)
   {
@@ -145,12 +142,12 @@ bool Api::DeleteConnection(string receiverFeatureUUID)
   }
 }
 
-void Api::Done()
+void TapiCore::Done()
 {
   pendingChanges = false;
 }
 
-vector<Tapi::Connection*> Api::GetConnections()
+vector<Tapi::Connection*> TapiCore::GetConnections()
 {
   vector<Tapi::Connection*> connectionList;
   for (auto it = connections.begin(); it != connections.end(); ++it)
@@ -158,7 +155,7 @@ vector<Tapi::Connection*> Api::GetConnections()
   return connectionList;
 }
 
-vector<Tapi::Device*> Api::GetDevicesSorted()
+vector<Tapi::Device*> TapiCore::GetDevicesSorted()
 {
   vector<Tapi::Device*> devicesList;
   for (auto it = devices.begin(); it != devices.end(); ++it)
@@ -168,14 +165,9 @@ vector<Tapi::Device*> Api::GetDevicesSorted()
   return devicesList;
 }
 
-void Api::Run()
-{
-  spinner->start();
-}
-
 // Private memeber functions
 
-void Api::changed()
+void TapiCore::changed()
 {
   pendingChanges = true;
   sendAllConnections();
@@ -184,12 +176,12 @@ void Api::changed()
 #endif
 }
 
-bool Api::compareDeviceNames(const Tapi::Device* first, const Tapi::Device* second)
+bool TapiCore::compareDeviceNames(const Tapi::Device* first, const Tapi::Device* second)
 {
   return first->GetName() < second->GetName();
 }
 
-Tapi::Device* Api::getDeviceByFeatureUUID(string uuid)
+Tapi::Device* TapiCore::getDeviceByFeatureUUID(string uuid)
 {
   for (auto it = devices.begin(); it != devices.end(); ++it)
   {
@@ -199,7 +191,7 @@ Tapi::Device* Api::getDeviceByFeatureUUID(string uuid)
   return 0;
 }
 
-void Api::heartbeatCheck(const ros::TimerEvent& e)
+void TapiCore::heartbeatCheck(const ros::TimerEvent& e)
 {
   bool deactivatedDevices = false;
   for (auto it = devices.begin(); it != devices.end(); ++it)
@@ -213,7 +205,7 @@ void Api::heartbeatCheck(const ros::TimerEvent& e)
     changed();
 }
 
-bool Api::hello(tapi_msgs::Hello::Request& helloReq, tapi_msgs::Hello::Response& helloResp)
+bool TapiCore::hello(tapi_msgs::Hello::Request& helloReq, tapi_msgs::Hello::Response& helloResp)
 {
   string uuid = helloReq.UUID;
   unsigned long lastSeq = helloReq.Header.seq;
@@ -256,7 +248,7 @@ bool Api::hello(tapi_msgs::Hello::Request& helloReq, tapi_msgs::Hello::Response&
   return false;
 }
 
-void Api::sendAllConnections()
+void TapiCore::sendAllConnections()
 {
   for (auto it = connections.begin(); it != connections.end(); ++it)
   {

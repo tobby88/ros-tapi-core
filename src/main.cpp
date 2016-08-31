@@ -1,16 +1,14 @@
-#include <QApplication>
-#include "api.hpp"
-#include "maingui.hpp"
+#include "tapicore.hpp"
 #include "ros/ros.h"
 
 int main(int argc, char** argv)
 {
   ros::init(argc, argv, "Tapi");
   ros::NodeHandle nh;
-  Tapi::Api api(&nh);
-  QApplication a(argc, argv);
-  Tapi::MainGui w(&api);
-  w.show();
-  api.Run();
-  return a.exec();
+  Tapi::TapiCore tapi(&nh);
+
+  while (ros::ok())
+    ros::spin();
+
+  return 0;
 }

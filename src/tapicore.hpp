@@ -1,5 +1,5 @@
-#ifndef API_H
-#define API_H
+#ifndef TAPICORE_H
+#define TAPICORE_H
 
 // Intervals in ms
 #define HEARTBEAT_CHECK_INTERVAL 100L
@@ -15,12 +15,12 @@
 
 namespace Tapi
 {
-class Api
+class TapiCore
 {
 public:
   // Constructor/Destructor
-  explicit Api(ros::NodeHandle* nh);
-  ~Api();
+  explicit TapiCore(ros::NodeHandle* nh);
+  ~TapiCore();
 
   // Public member functions
   void AddDeviceWithoutHello(uint8_t type, std::string name, std::string uuid, unsigned long heartbeat,
@@ -33,7 +33,6 @@ public:
   void Done();
   std::vector<Tapi::Connection*> GetConnections();
   std::vector<Tapi::Device*> GetDevicesSorted();
-  void Run();
 
 private:
   // Private member variables
@@ -44,7 +43,6 @@ private:
   ros::ServiceServer helloServ;
   ros::NodeHandle* nh;
   bool pendingChanges;
-  ros::AsyncSpinner* spinner;
 
   // Private member functions
   void changed();
@@ -56,4 +54,4 @@ private:
 };
 }
 
-#endif  // API_H
+#endif  // TAPICORE_H

@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.1.0)
-project(tapi)
+cmake_minimum_required(VERSION 2.8.3)
+project(tapi_core)
 
 # Use specified C++ standard
 set(CMAKE_CXX_STANDARD 11)
@@ -18,10 +18,6 @@ find_package(catkin REQUIRED COMPONENTS
 # Qt
 # Find includes in corresponding build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-# Instruct CMake to run moc automatically when needed
-set(CMAKE_AUTOMOC ON)
-# Invoke uic automatically when needed
-set(CMAKE_AUTOUIC ON)
 # Find the QtWidgets library
 find_package(Qt5Widgets)
 
@@ -140,16 +136,11 @@ include_directories(
 
 ## Declare a C++ executable
 add_executable(tapi
-  src/api.cpp
-  src/apigui.cpp
-  src/apigui.ui
   src/connection.cpp
   src/device.cpp
   src/feature.cpp
-  src/guidevice.cpp
   src/main.cpp
-  src/maingui.cpp
-  src/maingui.ui
+  src/tapicore.cpp
 )
 
 ## Add cmake target dependencies of the executable
