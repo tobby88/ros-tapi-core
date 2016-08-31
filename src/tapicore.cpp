@@ -28,6 +28,7 @@ TapiCore::~TapiCore()
   lastChangedPub.shutdown();
   configPub.shutdown();
   heartbeatCheckTimer.stop();
+  clearSub.shutdown();
   ROS_INFO("Hello-Service has been stopped.");
 }
 
