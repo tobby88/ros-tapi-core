@@ -1,7 +1,7 @@
 #include "tapicore.hpp"
 #include "feature.hpp"
 #include "std_msgs/Time.h"
-#include "tapi_msgs/Config.h"
+#include "tapi_msgs/Connection.h"
 #include "tapi_msgs/Device.h"
 #include "tapi_msgs/Feature.h"
 
@@ -14,7 +14,7 @@ namespace Tapi
 TapiCore::TapiCore(ros::NodeHandle* nh) : nh(nh)
 {
   helloServ = nh->advertiseService("Tapi/HelloServ", &TapiCore::hello, this);
-  configPub = nh->advertise<tapi_msgs::Config>("Tapi/Config", 1000);
+  configPub = nh->advertise<tapi_msgs::Connection>("Tapi/Config", 1000);
   lastChangedPub = nh->advertise<std_msgs::Time>("Tapi/LastChanged", 5);
   ROS_INFO("Started Hello-Service, ready for connections.");
   heartbeatCheckTimer =
@@ -163,7 +163,7 @@ void TapiCore::deleteConnection(std::string receiverFeatureUUID)
       devices.at(senderUUID).GetFeatureByUUID(senderFeatureUUID)->DecrementConnections();
     if (devices.count(receiverUUID) > 0)
       devices.at(receiverUUID).GetFeatureByUUID(receiverFeatureUUID)->DecrementConnections();
-    tapi_msgs::Config msg;
+    tapi_msgs::Connection msg;
     msg.SenderUUID = "0";
     msg.SenderFeatureUUID = "0";
     msg.ReceiverUUID = receiverUUID;
@@ -286,7 +286,7 @@ void TapiCore::sendAllConnections()
 {
   for (auto it = connections.begin(); it != connections.end(); ++it)
   {
-    tapi_msgs::Config msg;
+    tapi_msgs::Connection msg;
     msg.SenderUUID = it->second.GetSenderUUID();
     msg.SenderFeatureUUID = it->second.GetSenderFeatureUUID();
     msg.ReceiverUUID = it->second.GetReceiverUUID();
