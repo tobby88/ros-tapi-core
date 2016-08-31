@@ -15,7 +15,8 @@ TapiCore::TapiCore(ros::NodeHandle* nh) : nh(nh)
   configPub = nh->advertise<tapi_msgs::Config>("Tapi/Config", 1000);
   ROS_INFO("Started Hello-Service, ready for connections.");
   pendingChanges = false;
-  heartbeatCheckTimer = nh->createTimer(ros::Duration(HEARTBEAT_CHECK_INTERVAL / 1000.0), &TapiCore::heartbeatCheck, this);
+  heartbeatCheckTimer =
+      nh->createTimer(ros::Duration(HEARTBEAT_CHECK_INTERVAL / 1000.0), &TapiCore::heartbeatCheck, this);
   heartbeatCheckTimer.start();
 }
 
