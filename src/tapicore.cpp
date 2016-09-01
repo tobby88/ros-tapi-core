@@ -58,8 +58,23 @@ void TapiCore::clear(const std_msgs::Bool::ConstPtr& cl)
 {
   if (cl->data)
   {
-    for (auto it = connections.begin(); it != connections.end(); ++it)
-      deleteConnection(it->second.GetReceiverFeatureUUID());
+    for (auto it = devices.begin(); it != devices.end(); ++it)
+    {
+      if (it->second.GetType() == tapi_msgs::HelloRequest::Type_ReceiverDevice)
+      {
+        vector<Tapi::Feature*> features = it->second.GetSortedFeatures();
+        for (auto it2 = features.begin(); it2 != features.end(); ++it2)
+        {
+          tapi_msgs::Connection del;
+          del.Coefficient = 1.0;
+          del.ReceiverFeatureUUID = (*it2)->GetUUID();
+          del.ReceiverUUID = it->second.GetUUID();
+          del.SenderFeatureUUID = "0";
+          del.SenderUUID = "0";
+          configPub.publish(del);
+        }
+      }
+    }
     connections.clear();
     devices.clear();
     changed();
