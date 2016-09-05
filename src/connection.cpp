@@ -6,12 +6,12 @@ namespace Tapi
 {
 // Constructor/Destructor
 
-Connection::Connection(string senderUUID, string senderFeatureUUID, string receiverUUID, string receiverFeatureUUID,
-                       double coefficient)
-  : senderUUID(senderUUID)
-  , senderFeatureUUID(senderFeatureUUID)
-  , receiverUUID(receiverUUID)
-  , receiverFeatureUUID(receiverFeatureUUID)
+Connection::Connection(string publisherUUID, string publisherFeatureUUID, string subscriberUUID,
+                       string subscriberFeatureUUID, double coefficient)
+  : publisherUUID(publisherUUID)
+  , publisherFeatureUUID(publisherFeatureUUID)
+  , subscriberUUID(subscriberUUID)
+  , subscriberFeatureUUID(subscriberFeatureUUID)
   , coefficient(coefficient)
 {
 }
@@ -27,23 +27,23 @@ double Connection::GetCoefficient()
   return coefficient;
 }
 
-string Connection::GetReceiverFeatureUUID()
+string Connection::GetPublisherFeatureUUID()
 {
-  return receiverFeatureUUID;
+  return publisherFeatureUUID;
 }
 
-string Connection::GetReceiverUUID()
+string Connection::GetPublisherUUID()
 {
-  return receiverUUID;
+  return publisherUUID;
 }
 
-string Connection::GetSenderFeatureUUID()
+string Connection::GetSubscriberFeatureUUID()
 {
-  return senderFeatureUUID;
+  return subscriberFeatureUUID;
 }
 
-string Connection::GetSenderUUID()
+string Connection::GetSubscriberUUID()
 {
-  return senderUUID;
+  return subscriberUUID;
 }
 }

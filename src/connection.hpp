@@ -9,24 +9,24 @@ class Connection
 {
 public:
   // Constructor/Destructor
-  Connection(std::string senderUUID, std::string senderFeatureUUID, std::string receiverUUID,
-             std::string receiverFeatureUUID, double coefficient);
+  Connection(std::string publisherUUID, std::string publisherFeatureUUID, std::string subscriberUUID,
+             std::string subscriberFeatureUUID, double coefficient);
   ~Connection();
 
   // Public member functions
   double GetCoefficient();
-  std::string GetReceiverFeatureUUID();
-  std::string GetReceiverUUID();
-  std::string GetSenderFeatureUUID();
-  std::string GetSenderUUID();
+  std::string GetPublisherFeatureUUID();
+  std::string GetPublisherUUID();
+  std::string GetSubscriberFeatureUUID();
+  std::string GetSubscriberUUID();
 
 private:
   // Private member variables
   double coefficient;
-  std::string receiverFeatureUUID;
-  std::string receiverUUID;
-  std::string senderFeatureUUID;
-  std::string senderUUID;
+  std::string publisherFeatureUUID;
+  std::string publisherUUID;
+  std::string subscriberFeatureUUID;
+  std::string subscriberUUID;
 };
 }
 

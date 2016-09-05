@@ -54,7 +54,7 @@ private:
   void connectFeatures(const tapi_msgs::Connect::ConstPtr& con);
   void debugOutput();
   void deleteConnection(const std_msgs::String::ConstPtr& del);
-  void deleteConnection(std::string receiverFeatureUUID);
+  void deleteConnection(std::string subscriberFeatureUUID);
   bool getConnectionList(tapi_msgs::GetConnectionList::Request& listReq,
                          tapi_msgs::GetConnectionList::Response& listResp);
   Tapi::Device* getDeviceByFeatureUUID(std::string uuid);

@@ -13,18 +13,18 @@ namespace Tapi
 
 TapiCore::TapiCore(ros::NodeHandle* nh) : nh(nh)
 {
-  helloServ = nh->advertiseService("Tapi/HelloServ", &TapiCore::hello, this);
-  configPub = nh->advertise<tapi_msgs::Connection>("Tapi/Config", 1000);
-  lastChangedPub = nh->advertise<std_msgs::Time>("Tapi/LastChanged", 5);
+  helloServ = nh->advertiseService("/Tapi/HelloServ", &TapiCore::hello, this);
+  configPub = nh->advertise<tapi_msgs::Connection>("/Tapi/Config", 1000);
+  lastChangedPub = nh->advertise<std_msgs::Time>("/Tapi/LastChanged", 5);
   ROS_INFO("Started Hello-Service, ready for connections.");
   heartbeatCheckTimer =
       nh->createTimer(ros::Duration(HEARTBEAT_CHECK_INTERVAL / 1000.0), &TapiCore::heartbeatCheck, this);
   heartbeatCheckTimer.start();
-  delSub = nh->subscribe("Tapi/DeleteConnection", 1000, &TapiCore::deleteConnection, this);
-  clearSub = nh->subscribe("Tapi/Clear", 1, &TapiCore::clear, this);
-  connectSub = nh->subscribe("Tapi/ConnectFeatures", 1, &TapiCore::connectFeatures, this);
-  getDevsServ = nh->advertiseService("Tapi/GetDeviceList", &TapiCore::getDevicesSorted, this);
-  getConnsServ = nh->advertiseService("Tapi/GetConnectionList", &TapiCore::getConnectionList, this);
+  delSub = nh->subscribe("/Tapi/DeleteConnection", 1000, &TapiCore::deleteConnection, this);
+  clearSub = nh->subscribe("/Tapi/Clear", 1, &TapiCore::clear, this);
+  connectSub = nh->subscribe("/Tapi/ConnectFeatures", 1, &TapiCore::connectFeatures, this);
+  getDevsServ = nh->advertiseService("/Tapi/GetDeviceList", &TapiCore::getDevicesSorted, this);
+  getConnsServ = nh->advertiseService("/Tapi/GetConnectionList", &TapiCore::getConnectionList, this);
 }
 
 TapiCore::~TapiCore()
@@ -60,17 +60,17 @@ void TapiCore::clear(const std_msgs::Bool::ConstPtr& cl)
   {
     for (auto it = devices.begin(); it != devices.end(); ++it)
     {
-      if (it->second.GetType() == tapi_msgs::HelloRequest::Type_ReceiverDevice)
+      if (it->second.GetType() == tapi_msgs::Device::Type_Subscriber)
       {
         vector<Tapi::Feature*> features = it->second.GetSortedFeatures();
         for (auto it2 = features.begin(); it2 != features.end(); ++it2)
         {
           tapi_msgs::Connection del;
           del.Coefficient = 1.0;
-          del.ReceiverFeatureUUID = (*it2)->GetUUID();
-          del.ReceiverUUID = it->second.GetUUID();
-          del.SenderFeatureUUID = "0";
-          del.SenderUUID = "0";
+          del.PublisherFeatureUUID = "0";
+          del.PublisherUUID = "0";
+          del.SubscriberFeatureUUID = (*it2)->GetUUID();
+          del.SubscriberUUID = it->second.GetUUID();
           configPub.publish(del);
         }
       }
@@ -100,34 +100,35 @@ void TapiCore::connectFeatures(const tapi_msgs::Connect::ConstPtr& con)
     // At least one Device not found
     return;
   if (device1->GetType() == device2->GetType())
-    // Cannont connect devices of same type (sender-sender or receiver-receiver)
+    // Cannont connect devices of same type (publisher-publisher or subscriber-subscriber)
     return;
   if (device1->GetFeatureByUUID(feature1uuid)->GetType() != device2->GetFeatureByUUID(feature2uuid)->GetType())
-    // Cannot connect features of different types
+    // Cannot connect features of different message-types
     return;
 
-  // Who is sender, who receiver?
-  string senderUUID, receiverUUID, senderFeatureUUID, receiverFeatureUUID;
-  if (device1->GetType() == tapi_msgs::HelloRequest::Type_ReceiverDevice)
+  // Who is publisher, who subscriber?
+  string publisherUUID, subscriberUUID, publisherFeatureUUID, subscriberFeatureUUID;
+  if (device1->GetType() == tapi_msgs::Device::Type_Subscriber)
   {
-    receiverUUID = device1->GetUUID();
-    receiverFeatureUUID = feature1uuid;
-    senderUUID = device2->GetUUID();
-    senderFeatureUUID = feature2uuid;
+    subscriberUUID = device1->GetUUID();
+    subscriberFeatureUUID = feature1uuid;
+    publisherUUID = device2->GetUUID();
+    publisherFeatureUUID = feature2uuid;
   }
   else
   {
-    receiverUUID = device2->GetUUID();
-    receiverFeatureUUID = feature2uuid;
-    senderUUID = device1->GetUUID();
-    senderFeatureUUID = feature1uuid;
+    subscriberUUID = device2->GetUUID();
+    subscriberFeatureUUID = feature2uuid;
+    publisherUUID = device1->GetUUID();
+    publisherFeatureUUID = feature1uuid;
   }
 
-  if (connections.count(receiverFeatureUUID) == 0)
+  if (connections.count(subscriberFeatureUUID) == 0)
   {
     // Old connection was removed before reassigning so connect devices/features
-    Tapi::Connection connection(senderUUID, senderFeatureUUID, receiverUUID, receiverFeatureUUID, coefficient);
-    connections.emplace(receiverFeatureUUID, connection);
+    Tapi::Connection connection(publisherUUID, publisherFeatureUUID, subscriberUUID, subscriberFeatureUUID,
+                                coefficient);
+    connections.emplace(subscriberFeatureUUID, connection);
     device1->GetFeatureByUUID(feature1uuid)->IncrementConnections();
     device2->GetFeatureByUUID(feature2uuid)->IncrementConnections();
     changed();
@@ -137,7 +138,7 @@ void TapiCore::connectFeatures(const tapi_msgs::Connect::ConstPtr& con)
 bool TapiCore::getConnectionList(tapi_msgs::GetConnectionList::Request& listReq,
                                  tapi_msgs::GetConnectionList::Response& listResp)
 {
-  if (listReq.get)
+  if (listReq.Get)
   {
     vector<Tapi::Connection*> connectionVec;
     for (auto it = connections.begin(); it != connections.end(); ++it)
@@ -147,10 +148,10 @@ bool TapiCore::getConnectionList(tapi_msgs::GetConnectionList::Request& listReq,
     {
       tapi_msgs::Connection connection;
       connection.Coefficient = (*it)->GetCoefficient();
-      connection.ReceiverFeatureUUID = (*it)->GetReceiverFeatureUUID();
-      connection.ReceiverUUID = (*it)->GetReceiverUUID();
-      connection.SenderFeatureUUID = (*it)->GetSenderFeatureUUID();
-      connection.SenderUUID = (*it)->GetSenderUUID();
+      connection.PublisherFeatureUUID = (*it)->GetPublisherFeatureUUID();
+      connection.PublisherUUID = (*it)->GetPublisherUUID();
+      connection.SubscriberFeatureUUID = (*it)->GetSubscriberFeatureUUID();
+      connection.SubscriberUUID = (*it)->GetSubscriberUUID();
       msg.push_back(connection);
     }
     listResp.Connections = msg;
@@ -180,30 +181,30 @@ void TapiCore::debugOutput()
 
 void TapiCore::deleteConnection(const std_msgs::String::ConstPtr& del)
 {
-  string receiverFeatureUUID = del->data;
-  deleteConnection(receiverFeatureUUID);
+  string subscriberFeatureUUID = del->data;
+  deleteConnection(subscriberFeatureUUID);
 }
 
-void TapiCore::deleteConnection(std::string receiverFeatureUUID)
+void TapiCore::deleteConnection(std::string subscriberFeatureUUID)
 {
-  if (connections.count(receiverFeatureUUID) > 0)
+  if (connections.count(subscriberFeatureUUID) > 0)
   {
-    Tapi::Connection* connection = &connections.at(receiverFeatureUUID);
-    string senderUUID = connection->GetSenderUUID();
-    string senderFeatureUUID = connection->GetSenderFeatureUUID();
-    string receiverUUID = connection->GetReceiverUUID();
-    if (devices.count(senderUUID) > 0)
-      devices.at(senderUUID).GetFeatureByUUID(senderFeatureUUID)->DecrementConnections();
-    if (devices.count(receiverUUID) > 0)
-      devices.at(receiverUUID).GetFeatureByUUID(receiverFeatureUUID)->DecrementConnections();
+    Tapi::Connection* connection = &connections.at(subscriberFeatureUUID);
+    string publisherUUID = connection->GetPublisherUUID();
+    string publisherFeatureUUID = connection->GetPublisherFeatureUUID();
+    string subscriberUUID = connection->GetSubscriberUUID();
+    if (devices.count(publisherUUID) > 0)
+      devices.at(publisherUUID).GetFeatureByUUID(publisherFeatureUUID)->DecrementConnections();
+    if (devices.count(subscriberUUID) > 0)
+      devices.at(subscriberUUID).GetFeatureByUUID(subscriberFeatureUUID)->DecrementConnections();
     tapi_msgs::Connection msg;
-    msg.SenderUUID = "0";
-    msg.SenderFeatureUUID = "0";
-    msg.ReceiverUUID = receiverUUID;
-    msg.ReceiverFeatureUUID = receiverFeatureUUID;
+    msg.PublisherUUID = "0";
+    msg.PublisherFeatureUUID = "0";
+    msg.SubscriberUUID = subscriberUUID;
+    msg.SubscriberFeatureUUID = subscriberFeatureUUID;
     msg.Coefficient = 0;
     configPub.publish(msg);
-    connections.erase(receiverFeatureUUID);
+    connections.erase(subscriberFeatureUUID);
   }
 }
 
@@ -220,7 +221,7 @@ Tapi::Device* TapiCore::getDeviceByFeatureUUID(string uuid)
 bool TapiCore::getDevicesSorted(tapi_msgs::GetDeviceList::Request& listReq,
                                 tapi_msgs::GetDeviceList::Response& listResp)
 {
-  if (listReq.get)
+  if (listReq.Get)
   {
     vector<Tapi::Device*> devicesList;
     for (auto it = devices.begin(); it != devices.end(); ++it)
@@ -320,10 +321,10 @@ void TapiCore::sendAllConnections()
   for (auto it = connections.begin(); it != connections.end(); ++it)
   {
     tapi_msgs::Connection msg;
-    msg.SenderUUID = it->second.GetSenderUUID();
-    msg.SenderFeatureUUID = it->second.GetSenderFeatureUUID();
-    msg.ReceiverUUID = it->second.GetReceiverUUID();
-    msg.ReceiverFeatureUUID = it->second.GetReceiverFeatureUUID();
+    msg.PublisherUUID = it->second.GetPublisherUUID();
+    msg.PublisherFeatureUUID = it->second.GetPublisherFeatureUUID();
+    msg.SubscriberUUID = it->second.GetSubscriberUUID();
+    msg.SubscriberFeatureUUID = it->second.GetSubscriberFeatureUUID();
     msg.Coefficient = it->second.GetCoefficient();
     configPub.publish(msg);
   }
