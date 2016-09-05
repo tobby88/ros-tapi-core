@@ -10,7 +10,12 @@
 #include <vector>
 #include "connection.hpp"
 #include "device.hpp"
+#include "ros/node_handle.h"
+#include "ros/publisher.h"
 #include "ros/ros.h"
+#include "ros/service_server.h"
+#include "ros/subscriber.h"
+#include "ros/timer.h"
 #include "std_msgs/Bool.h"
 #include "std_msgs/String.h"
 #include "tapi_msgs/Connect.h"
