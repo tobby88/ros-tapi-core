@@ -1,9 +1,9 @@
 #include "tapicore.hpp"
 #include "feature.hpp"
 #include "std_msgs/Time.h"
-#include "tapi_msgs/Connection.h"
-#include "tapi_msgs/Device.h"
-#include "tapi_msgs/Feature.h"
+#include "tapi_lib/Connection.h"
+#include "tapi_lib/Device.h"
+#include "tapi_lib/Feature.h"
 
 using namespace std;
 
@@ -14,7 +14,7 @@ namespace Tapi
 TapiCore::TapiCore(ros::NodeHandle* nh) : nh(nh)
 {
   helloServ = nh->advertiseService("/Tapi/HelloServ", &TapiCore::hello, this);
-  configPub = nh->advertise<tapi_msgs::Connection>("/Tapi/Config", 1000);
+  configPub = nh->advertise<tapi_lib::Connection>("/Tapi/Config", 1000);
   lastChangedPub = nh->advertise<std_msgs::Time>("/Tapi/LastChanged", 5);
   ROS_INFO("Started Hello-Service, ready for connections.");
   heartbeatCheckTimer =
@@ -60,12 +60,12 @@ void TapiCore::clear(const std_msgs::Bool::ConstPtr& cl)
   {
     for (auto it = devices.begin(); it != devices.end(); ++it)
     {
-      if (it->second.GetType() == tapi_msgs::Device::Type_Subscriber)
+      if (it->second.GetType() == tapi_lib::Device::Type_Subscriber)
       {
         vector<Tapi::Feature*> features = it->second.GetSortedFeatures();
         for (auto it2 = features.begin(); it2 != features.end(); ++it2)
         {
-          tapi_msgs::Connection del;
+          tapi_lib::Connection del;
           del.Coefficient = 1.0;
           del.PublisherFeatureUUID = "0";
           del.PublisherUUID = "0";
@@ -86,7 +86,7 @@ bool TapiCore::compareDeviceNames(const Tapi::Device* first, const Tapi::Device*
   return first->GetName() < second->GetName();
 }
 
-void TapiCore::connectFeatures(const tapi_msgs::Connect::ConstPtr& con)
+void TapiCore::connectFeatures(const tapi_lib::Connect::ConstPtr& con)
 {
   string feature1uuid, feature2uuid;
   double coefficient;
@@ -108,7 +108,7 @@ void TapiCore::connectFeatures(const tapi_msgs::Connect::ConstPtr& con)
 
   // Who is publisher, who subscriber?
   string publisherUUID, subscriberUUID, publisherFeatureUUID, subscriberFeatureUUID;
-  if (device1->GetType() == tapi_msgs::Device::Type_Subscriber)
+  if (device1->GetType() == tapi_lib::Device::Type_Subscriber)
   {
     subscriberUUID = device1->GetUUID();
     subscriberFeatureUUID = feature1uuid;
@@ -135,18 +135,18 @@ void TapiCore::connectFeatures(const tapi_msgs::Connect::ConstPtr& con)
   }
 }
 
-bool TapiCore::getConnectionList(tapi_msgs::GetConnectionList::Request& listReq,
-                                 tapi_msgs::GetConnectionList::Response& listResp)
+bool TapiCore::getConnectionList(tapi_lib::GetConnectionList::Request& listReq,
+                                 tapi_lib::GetConnectionList::Response& listResp)
 {
   if (listReq.Get)
   {
     vector<Tapi::Connection*> connectionVec;
     for (auto it = connections.begin(); it != connections.end(); ++it)
       connectionVec.push_back(&it->second);
-    vector<tapi_msgs::Connection> msg;
+    vector<tapi_lib::Connection> msg;
     for (auto it = connectionVec.begin(); it != connectionVec.end(); ++it)
     {
-      tapi_msgs::Connection connection;
+      tapi_lib::Connection connection;
       connection.Coefficient = (*it)->GetCoefficient();
       connection.PublisherFeatureUUID = (*it)->GetPublisherFeatureUUID();
       connection.PublisherUUID = (*it)->GetPublisherUUID();
@@ -197,7 +197,7 @@ void TapiCore::deleteConnection(std::string subscriberFeatureUUID)
       devices.at(publisherUUID).GetFeatureByUUID(publisherFeatureUUID)->DecrementConnections();
     if (devices.count(subscriberUUID) > 0)
       devices.at(subscriberUUID).GetFeatureByUUID(subscriberFeatureUUID)->DecrementConnections();
-    tapi_msgs::Connection msg;
+    tapi_lib::Connection msg;
     msg.PublisherUUID = "0";
     msg.PublisherFeatureUUID = "0";
     msg.SubscriberUUID = subscriberUUID;
@@ -218,8 +218,7 @@ Tapi::Device* TapiCore::getDeviceByFeatureUUID(string uuid)
   return 0;
 }
 
-bool TapiCore::getDevicesSorted(tapi_msgs::GetDeviceList::Request& listReq,
-                                tapi_msgs::GetDeviceList::Response& listResp)
+bool TapiCore::getDevicesSorted(tapi_lib::GetDeviceList::Request& listReq, tapi_lib::GetDeviceList::Response& listResp)
 {
   if (listReq.Get)
   {
@@ -228,10 +227,10 @@ bool TapiCore::getDevicesSorted(tapi_msgs::GetDeviceList::Request& listReq,
       devicesList.push_back(&it->second);
     if (devicesList.size() > 1)
       sort(devicesList.begin(), devicesList.end(), compareDeviceNames);
-    vector<tapi_msgs::Device> answer;
+    vector<tapi_lib::Device> answer;
     for (auto it = devicesList.begin(); it != devicesList.end(); ++it)
     {
-      tapi_msgs::Device device;
+      tapi_lib::Device device;
       device.Active = (*it)->Active();
       device.DeviceType = (*it)->GetType();
       device.Heartbeat = (*it)->GetHeartbeat();
@@ -240,10 +239,10 @@ bool TapiCore::getDevicesSorted(tapi_msgs::GetDeviceList::Request& listReq,
       device.Name = (*it)->GetName();
       device.UUID = (*it)->GetUUID();
       vector<Feature*> features = (*it)->GetSortedFeatures();
-      vector<tapi_msgs::Feature> featureMsgs;
+      vector<tapi_lib::Feature> featureMsgs;
       for (auto it2 = features.begin(); it2 != features.end(); ++it2)
       {
-        tapi_msgs::Feature featureMsg;
+        tapi_lib::Feature featureMsg;
         featureMsg.FeatureType = (*it2)->GetType();
         featureMsg.Name = (*it2)->GetName();
         featureMsg.UUID = (*it2)->GetUUID();
@@ -273,7 +272,7 @@ void TapiCore::heartbeatCheck(const ros::TimerEvent& e)
     changed();
 }
 
-bool TapiCore::hello(tapi_msgs::Hello::Request& helloReq, tapi_msgs::Hello::Response& helloResp)
+bool TapiCore::hello(tapi_lib::Hello::Request& helloReq, tapi_lib::Hello::Response& helloResp)
 {
   string uuid = helloReq.UUID;
   unsigned long lastSeq = helloReq.Header.seq;
@@ -292,7 +291,7 @@ bool TapiCore::hello(tapi_msgs::Hello::Request& helloReq, tapi_msgs::Hello::Resp
   {
     Tapi::Device device(type, name, uuid, lastSeq, lastSeen, heartbeat, features);
     devices.emplace(uuid, device);
-    helloResp.Status = tapi_msgs::HelloResponse::StatusOK;
+    helloResp.Status = tapi_lib::HelloResponse::StatusOK;
     helloResp.Heartbeat = heartbeat;
     changed();
     return true;
@@ -300,7 +299,7 @@ bool TapiCore::hello(tapi_msgs::Hello::Request& helloReq, tapi_msgs::Hello::Resp
   else if (devices.count(uuid) == 1)
   {
     devices.at(uuid).Update(type, name, lastSeq, lastSeen, heartbeat, features);
-    helloResp.Status = tapi_msgs::HelloResponse::StatusOK;
+    helloResp.Status = tapi_lib::HelloResponse::StatusOK;
     helloResp.Heartbeat = heartbeat;
     changed();
     return true;
@@ -309,7 +308,7 @@ bool TapiCore::hello(tapi_msgs::Hello::Request& helloReq, tapi_msgs::Hello::Resp
   {
     ROS_ERROR("Hello message couldn't be decoded, looks like there is something wrong with the devices database. "
               "Please try to restart the Hello-Service.");
-    helloResp.Status = tapi_msgs::HelloResponse::StatusError;
+    helloResp.Status = tapi_lib::HelloResponse::StatusError;
     helloResp.Heartbeat = STANDARD_HEARTBEAT_INTERVAL;
     return false;
   }
@@ -320,7 +319,7 @@ void TapiCore::sendAllConnections()
 {
   for (auto it = connections.begin(); it != connections.end(); ++it)
   {
-    tapi_msgs::Connection msg;
+    tapi_lib::Connection msg;
     msg.PublisherUUID = it->second.GetPublisherUUID();
     msg.PublisherFeatureUUID = it->second.GetPublisherFeatureUUID();
     msg.SubscriberUUID = it->second.GetSubscriberUUID();

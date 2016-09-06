@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>tapi_core</name>
-  <version>2.2.0</version>
+  <version>2.3.0</version>
   <description>Tapi core package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
@@ -24,7 +24,7 @@
   <!-- Dependencies can be catkin packages or system dependencies -->
   <buildtool_depend>catkin</buildtool_depend>
   <depend>roscpp</depend>
-  <depend>tapi_msgs</depend>
+  <depend>tapi_lib</depend>
   <exec_depend>message_runtime</exec_depend>
 
   <!-- The export tag contains other, unspecified, tags -->

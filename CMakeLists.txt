@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD 11)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
-  tapi_msgs
+  tapi_lib
 )
 
 ## System dependencies are found with CMake's conventions
@@ -109,7 +109,7 @@ find_package(Qt5Widgets)
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES tapi
-  CATKIN_DEPENDS message_runtime roscpp tapi_msgs
+  CATKIN_DEPENDS message_runtime roscpp tapi_lib
 #  DEPENDS system_lib
 )
 

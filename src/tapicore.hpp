@@ -18,10 +18,10 @@
 #include "ros/timer.h"
 #include "std_msgs/Bool.h"
 #include "std_msgs/String.h"
-#include "tapi_msgs/Connect.h"
-#include "tapi_msgs/GetConnectionList.h"
-#include "tapi_msgs/GetDeviceList.h"
-#include "tapi_msgs/Hello.h"
+#include "tapi_lib/Connect.h"
+#include "tapi_lib/GetConnectionList.h"
+#include "tapi_lib/GetDeviceList.h"
+#include "tapi_lib/Hello.h"
 
 namespace Tapi
 {
@@ -51,16 +51,16 @@ private:
   void changed();
   void clear(const std_msgs::Bool::ConstPtr& cl);
   static bool compareDeviceNames(const Tapi::Device* first, const Tapi::Device* second);
-  void connectFeatures(const tapi_msgs::Connect::ConstPtr& con);
+  void connectFeatures(const tapi_lib::Connect::ConstPtr& con);
   void debugOutput();
   void deleteConnection(const std_msgs::String::ConstPtr& del);
   void deleteConnection(std::string subscriberFeatureUUID);
-  bool getConnectionList(tapi_msgs::GetConnectionList::Request& listReq,
-                         tapi_msgs::GetConnectionList::Response& listResp);
+  bool getConnectionList(tapi_lib::GetConnectionList::Request& listReq,
+                         tapi_lib::GetConnectionList::Response& listResp);
   Tapi::Device* getDeviceByFeatureUUID(std::string uuid);
-  bool getDevicesSorted(tapi_msgs::GetDeviceList::Request& listReq, tapi_msgs::GetDeviceList::Response& listResp);
+  bool getDevicesSorted(tapi_lib::GetDeviceList::Request& listReq, tapi_lib::GetDeviceList::Response& listResp);
   void heartbeatCheck(const ros::TimerEvent& e);
-  bool hello(tapi_msgs::Hello::Request& helloReq, tapi_msgs::Hello::Response& helloResp);
+  bool hello(tapi_lib::Hello::Request& helloReq, tapi_lib::Hello::Response& helloResp);
   void sendAllConnections();
 };
 }
