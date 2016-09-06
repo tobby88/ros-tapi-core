@@ -8,8 +8,6 @@
 #include <map>
 #include <string>
 #include <vector>
-#include "connection.hpp"
-#include "device.hpp"
 #include "ros/node_handle.h"
 #include "ros/publisher.h"
 #include "ros/ros.h"
@@ -22,6 +20,8 @@
 #include "tapi_lib/GetConnectionList.h"
 #include "tapi_lib/GetDeviceList.h"
 #include "tapi_lib/Hello.h"
+#include "tapi_lib/connection.hpp"
+#include "tapi_lib/device.hpp"
 
 namespace Tapi
 {

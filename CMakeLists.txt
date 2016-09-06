@@ -136,9 +136,6 @@ include_directories(
 
 ## Declare a C++ executable
 add_executable(tapi
-  src/connection.cpp
-  src/device.cpp
-  src/feature.cpp
   src/main.cpp
   src/tapicore.cpp
 )

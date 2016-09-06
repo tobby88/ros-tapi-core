@@ -1,9 +1,9 @@
 #include "tapicore.hpp"
-#include "feature.hpp"
 #include "std_msgs/Time.h"
 #include "tapi_lib/Connection.h"
 #include "tapi_lib/Device.h"
 #include "tapi_lib/Feature.h"
+#include "tapi_lib/feature.hpp"
 
 using namespace std;
 
