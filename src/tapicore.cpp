@@ -22,6 +22,7 @@ TapiCore::TapiCore(ros::NodeHandle* nh) : nh(nh)
   heartbeatCheckTimer.start();
   delSub = nh->subscribe("/Tapi/DeleteConnection", 1000, &TapiCore::deleteConnection, this);
   clearAllSub = nh->subscribe("/Tapi/ClearAll", 1, &TapiCore::clearAll, this);
+  clearInactiveSub = nh->subscribe("/Tapi/ClearInactive", 1, &TapiCore::clearInactive, this);
   connectSub = nh->subscribe("/Tapi/ConnectFeatures", 1, &TapiCore::connectFeatures, this);
   getDevsServ = nh->advertiseService("/Tapi/GetDeviceList", &TapiCore::getDevicesSorted, this);
   getConnsServ = nh->advertiseService("/Tapi/GetConnectionList", &TapiCore::getConnectionList, this);
@@ -36,6 +37,7 @@ TapiCore::~TapiCore()
   heartbeatCheckTimer.stop();
   delSub.shutdown();
   clearAllSub.shutdown();
+  clearInactiveSub.shutdown();
   getDevsServ.shutdown();
   getConnsServ.shutdown();
   ROS_INFO("Hello-Service has been stopped.");
@@ -79,6 +81,37 @@ void TapiCore::clearAll(const std_msgs::Bool::ConstPtr& cl)
     devices.clear();
     changed();
   }
+}
+
+void TapiCore::clearInactive(const std_msgs::Bool::ConstPtr& cl)
+{
+  if (cl->data)
+  {
+    vector<string> toDelete;
+    for (auto it = devices.begin(); it != devices.end(); ++it)
+    {
+      if (!it->second.Active())
+      {
+        vector<Tapi::Feature*> features = it->second.GetSortedFeatures();
+        for (auto it2 = features.begin(); it2 != features.end(); ++it2)
+        {
+          tapi_lib::Connection del;
+          del.Coefficient = 1.0;
+          del.PublisherFeatureUUID = "0";
+          del.PublisherUUID = "0";
+          del.SubscriberFeatureUUID = (*it2)->GetUUID();
+          del.SubscriberUUID = it->second.GetUUID();
+          configPub.publish(del);
+          if (connections.count((*it2)->GetUUID()) > 0)
+            connections.erase((*it2)->GetUUID());
+        }
+        toDelete.push_back(it->first);
+      }
+    }
+    for (auto it = toDelete.begin(); it != toDelete.end(); ++it)
+      devices.erase(*it);
+  }
+  changed();
 }
 
 bool TapiCore::compareDeviceNames(const Tapi::Device* first, const Tapi::Device* second)
