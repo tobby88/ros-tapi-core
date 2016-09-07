@@ -14,16 +14,16 @@ namespace Tapi
 TapiCore::TapiCore(ros::NodeHandle* nh) : nh(nh)
 {
   helloServ = nh->advertiseService("/Tapi/HelloServ", &TapiCore::hello, this);
-  configPub = nh->advertise<tapi_lib::Connection>("/Tapi/Config", 1000);
+  configPub = nh->advertise<tapi_lib::Connection>("/Tapi/Config", 10000);
   lastChangedPub = nh->advertise<std_msgs::Time>("/Tapi/LastChanged", 5);
   ROS_INFO("Started Hello-Service, ready for connections.");
   heartbeatCheckTimer =
       nh->createTimer(ros::Duration(HEARTBEAT_CHECK_INTERVAL / 1000.0), &TapiCore::heartbeatCheck, this);
   heartbeatCheckTimer.start();
-  delSub = nh->subscribe("/Tapi/DeleteConnection", 1000, &TapiCore::deleteConnection, this);
-  clearAllSub = nh->subscribe("/Tapi/ClearAll", 1, &TapiCore::clearAll, this);
-  clearInactiveSub = nh->subscribe("/Tapi/ClearInactive", 1, &TapiCore::clearInactive, this);
-  connectSub = nh->subscribe("/Tapi/ConnectFeatures", 1, &TapiCore::connectFeatures, this);
+  delSub = nh->subscribe("/Tapi/DeleteConnection", 10000, &TapiCore::deleteConnection, this);
+  clearAllSub = nh->subscribe("/Tapi/ClearAll", 2, &TapiCore::clearAll, this);
+  clearInactiveSub = nh->subscribe("/Tapi/ClearInactive", 2, &TapiCore::clearInactive, this);
+  connectSub = nh->subscribe("/Tapi/ConnectFeatures", 10000, &TapiCore::connectFeatures, this);
   getDevsServ = nh->advertiseService("/Tapi/GetDeviceList", &TapiCore::getDevicesSorted, this);
   getConnsServ = nh->advertiseService("/Tapi/GetConnectionList", &TapiCore::getConnectionList, this);
 }
