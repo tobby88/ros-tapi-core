@@ -3,6 +3,8 @@ project(tapi_core)
 
 # Use specified C++ standard
 set(CMAKE_CXX_STANDARD 11)
+# ...and for older compilers
+add_definitions(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
