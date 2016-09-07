@@ -34,7 +34,7 @@ public:
 
 private:
   // Private member variables
-  ros::Subscriber clearSub;
+  ros::Subscriber clearAllSub;
   ros::Publisher configPub;
   std::map<std::string, Tapi::Connection> connections;
   ros::Subscriber connectSub;
@@ -49,7 +49,7 @@ private:
 
   // Private member functions
   void changed();
-  void clear(const std_msgs::Bool::ConstPtr& cl);
+  void clearAll(const std_msgs::Bool::ConstPtr& cl);
   static bool compareDeviceNames(const Tapi::Device* first, const Tapi::Device* second);
   void connectFeatures(const tapi_lib::Connect::ConstPtr& con);
   void debugOutput();

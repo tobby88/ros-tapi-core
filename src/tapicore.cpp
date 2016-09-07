@@ -21,7 +21,7 @@ TapiCore::TapiCore(ros::NodeHandle* nh) : nh(nh)
       nh->createTimer(ros::Duration(HEARTBEAT_CHECK_INTERVAL / 1000.0), &TapiCore::heartbeatCheck, this);
   heartbeatCheckTimer.start();
   delSub = nh->subscribe("/Tapi/DeleteConnection", 1000, &TapiCore::deleteConnection, this);
-  clearSub = nh->subscribe("/Tapi/Clear", 1, &TapiCore::clear, this);
+  clearAllSub = nh->subscribe("/Tapi/ClearAll", 1, &TapiCore::clearAll, this);
   connectSub = nh->subscribe("/Tapi/ConnectFeatures", 1, &TapiCore::connectFeatures, this);
   getDevsServ = nh->advertiseService("/Tapi/GetDeviceList", &TapiCore::getDevicesSorted, this);
   getConnsServ = nh->advertiseService("/Tapi/GetConnectionList", &TapiCore::getConnectionList, this);
@@ -35,7 +35,7 @@ TapiCore::~TapiCore()
   configPub.shutdown();
   heartbeatCheckTimer.stop();
   delSub.shutdown();
-  clearSub.shutdown();
+  clearAllSub.shutdown();
   getDevsServ.shutdown();
   getConnsServ.shutdown();
   ROS_INFO("Hello-Service has been stopped.");
@@ -54,7 +54,7 @@ void TapiCore::changed()
 #endif
 }
 
-void TapiCore::clear(const std_msgs::Bool::ConstPtr& cl)
+void TapiCore::clearAll(const std_msgs::Bool::ConstPtr& cl)
 {
   if (cl->data)
   {
