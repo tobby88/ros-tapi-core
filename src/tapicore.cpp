@@ -129,8 +129,6 @@ void TapiCore::connectFeatures(const tapi_lib::Connect::ConstPtr& con)
     Tapi::Connection connection(publisherUUID, publisherFeatureUUID, subscriberUUID, subscriberFeatureUUID,
                                 coefficient);
     connections.emplace(subscriberFeatureUUID, connection);
-    device1->GetFeatureByUUID(feature1uuid)->IncrementConnections();
-    device2->GetFeatureByUUID(feature2uuid)->IncrementConnections();
     changed();
   }
 }
@@ -190,13 +188,7 @@ void TapiCore::deleteConnection(std::string subscriberFeatureUUID)
   if (connections.count(subscriberFeatureUUID) > 0)
   {
     Tapi::Connection* connection = &connections.at(subscriberFeatureUUID);
-    string publisherUUID = connection->GetPublisherUUID();
-    string publisherFeatureUUID = connection->GetPublisherFeatureUUID();
     string subscriberUUID = connection->GetSubscriberUUID();
-    if (devices.count(publisherUUID) > 0)
-      devices.at(publisherUUID).GetFeatureByUUID(publisherFeatureUUID)->DecrementConnections();
-    if (devices.count(subscriberUUID) > 0)
-      devices.at(subscriberUUID).GetFeatureByUUID(subscriberFeatureUUID)->DecrementConnections();
     tapi_lib::Connection msg;
     msg.PublisherUUID = "0";
     msg.PublisherFeatureUUID = "0";
