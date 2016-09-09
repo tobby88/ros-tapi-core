@@ -95,15 +95,25 @@ void TapiCore::clearInactive(const std_msgs::Bool::ConstPtr& cl)
         vector<Tapi::Feature*> features = it->second.GetSortedFeatures();
         for (auto it2 = features.begin(); it2 != features.end(); ++it2)
         {
-          tapi_lib::Connection del;
-          del.Coefficient = 1.0;
-          del.PublisherFeatureUUID = "0";
-          del.PublisherUUID = "0";
-          del.SubscriberFeatureUUID = (*it2)->GetUUID();
-          del.SubscriberUUID = it->second.GetUUID();
-          configPub.publish(del);
-          if (connections.count((*it2)->GetUUID()) > 0)
-            connections.erase((*it2)->GetUUID());
+          vector<string> toDeleteCons;
+          for (auto it3 = connections.begin(); it3 != connections.end(); ++it3)
+          {
+            if (it3->second.GetSubscriberFeatureUUID() == (*it2)->GetUUID() ||
+                it3->second.GetPublisherFeatureUUID() == (*it2)->GetUUID())
+              toDeleteCons.push_back(it3->first);
+          }
+          for (auto it3 = toDeleteCons.begin(); it3 != toDeleteCons.end(); ++it3)
+            if (connections.count(*it3) > 0)
+            {
+              tapi_lib::Connection del;
+              del.Coefficient = 1.0;
+              del.PublisherFeatureUUID = "0";
+              del.PublisherUUID = "0";
+              del.SubscriberFeatureUUID = connections.at(*it3).GetSubscriberFeatureUUID();
+              del.SubscriberUUID = connections.at(*it3).GetSubscriberUUID();
+              configPub.publish(del);
+              connections.erase(*it3);
+            }
         }
         toDelete.push_back(it->first);
       }
