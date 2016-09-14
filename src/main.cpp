@@ -36,7 +36,7 @@
  * \file main.cpp
  * \author Tobias Holst
  * \date 19 Nov 2015
- * \brief File containing the main function of tapi_core
+ * \brief Main function of tapi_core
  */
 
 #include "ros/init.h"
@@ -49,7 +49,7 @@
  * Main function of tapi_core to initialize ROS, its NodeHandle and then create the TapiCore object to start the core.
  * \param argc Number of arguments when started from the console
  * \param argv \c char pointer to the \c char arrays of the given arguments
- * \return Returns 0 when exited correctly
+ * \return 0 when exited correctly
  * \see Tapi::TapiCore
  */
 int main(int argc, char** argv)
