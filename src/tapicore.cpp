@@ -32,6 +32,14 @@
  *  Programm erhalten haben. Wenn nicht, siehe <http://www.gnu.org/licenses/>.*
  ******************************************************************************/
 
+/*!
+ * \file tapicore.cpp
+ * \ingroup tapi_core
+ * \author Tobias Holst
+ * \date 18 Nov 2015
+ * \brief Definition of the Tapi::TapiCore-class and its member functions
+ */
+
 #include "tapicore.hpp"
 #include "std_msgs/Time.h"
 #include "tapi_lib/Connection.h"

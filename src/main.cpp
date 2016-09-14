@@ -33,7 +33,9 @@
  ******************************************************************************/
 
 /*!
+ * \defgroup tapi_core tapi_core
  * \file main.cpp
+ * \ingroup tapi_core
  * \author Tobias Holst
  * \date 19 Nov 2015
  * \brief Main function of tapi_core
