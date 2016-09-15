@@ -291,7 +291,7 @@ private:
   /*!
    * \brief Helper function to find and get the related device by a given uuid of a device-feature.
    * \param uuid UUID of the device-feature
-   * \return Pointer pointing to the entry of the device in the Tapi::TapiCore::devices map.
+   * \return Pointer pointing to the entry of the device in the Tapi::TapiCore::devices map. 0 if nothing is found.
    * \see \c Tapi::Device in \c tapi_lib package
    */
   Tapi::Device* getDeviceByFeatureUUID(std::string uuid);
