@@ -1,6 +1,6 @@
 - builder: doxygen
   file_patterns: '*.cpp *.hpp *.h *.dox *.md'
   name: tapi_core
-  output_dir: doc
+  output_dir: docs
   homepage: https://github.com/tobby88/ros-tapi-core
   config: rosdoc.cfg
