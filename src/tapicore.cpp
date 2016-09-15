@@ -288,6 +288,7 @@ void TapiCore::deleteConnection(std::string subscriberFeatureUUID)
     msg.Coefficient = 0;
     configPub.publish(msg);
     connections.erase(subscriberFeatureUUID);
+    changed();
   }
 }
 
