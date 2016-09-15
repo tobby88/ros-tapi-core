@@ -15,6 +15,7 @@
   <!-- Url tags are optional, but mutiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <url type="repository">https://github.com/tobby88/ros-tapi-core</url>
+  <url type="website">https://tobby88.github.io/ros-tapi-core/html/</url>
 
   <!-- Author tags are optional, mutiple are allowed, one per tag -->
   <!-- Authors do not have to be maintianers, but could be -->
