@@ -55,6 +55,7 @@ namespace Tapi
 
 TapiCore::TapiCore(ros::NodeHandle* nh) : nh(nh)
 {
+  // Create the subscribers, publishers and services
   helloServ = nh->advertiseService("/Tapi/HelloServ", &TapiCore::hello, this);
   configPub = nh->advertise<tapi_lib::Connection>("/Tapi/Config", 10000);
   lastChangedPub = nh->advertise<std_msgs::Time>("/Tapi/LastChanged", 5);
@@ -72,6 +73,7 @@ TapiCore::TapiCore(ros::NodeHandle* nh) : nh(nh)
 
 TapiCore::~TapiCore()
 {
+  // Shutdown all services, subscribers and publishers
   connectSub.shutdown();
   helloServ.shutdown();
   lastChangedPub.shutdown();
@@ -104,6 +106,8 @@ void TapiCore::clearAll(const std_msgs::Bool::ConstPtr& cl)
   {
     for (auto it = devices.begin(); it != devices.end(); ++it)
     {
+      // Iterate through all devices. If it's a Subscriber/ServiceClient iterate through its features and send a
+      // disconnect message (publisherUUID and publisherFeatureUUID = 0)
       if (it->second.GetType() == tapi_lib::Device::Type_Subscriber)
       {
         vector<Tapi::Feature*> features = it->second.GetSortedFeatures();
@@ -119,6 +123,7 @@ void TapiCore::clearAll(const std_msgs::Bool::ConstPtr& cl)
         }
       }
     }
+    // Empty the maps and notify, that the data has changed
     connections.clear();
     devices.clear();
     changed();
@@ -132,18 +137,23 @@ void TapiCore::clearInactive(const std_msgs::Bool::ConstPtr& cl)
     vector<string> toDelete;
     for (auto it = devices.begin(); it != devices.end(); ++it)
     {
+      // Iterate through all devices; if they are inactive, iterate through theif features
       if (!it->second.Active())
       {
         vector<Tapi::Feature*> features = it->second.GetSortedFeatures();
         for (auto it2 = features.begin(); it2 != features.end(); ++it2)
         {
           vector<string> toDeleteCons;
+          // Iterate through all connections to search for a connection of the feature in *it2, so it can be deleted out
+          // of the connections-map lateron
           for (auto it3 = connections.begin(); it3 != connections.end(); ++it3)
           {
             if (it3->second.GetSubscriberFeatureUUID() == (*it2)->GetUUID() ||
                 it3->second.GetPublisherFeatureUUID() == (*it2)->GetUUID())
               toDeleteCons.push_back(it3->first);
           }
+          // Iterate through this found (and deletable) connections, send a disconnect message (publisherUUID and
+          // publisherFeatureUUID = 0) and erase this entry in the connections-map
           for (auto it3 = toDeleteCons.begin(); it3 != toDeleteCons.end(); ++it3)
             if (connections.count(*it3) > 0)
             {
@@ -160,6 +170,7 @@ void TapiCore::clearInactive(const std_msgs::Bool::ConstPtr& cl)
         toDelete.push_back(it->first);
       }
     }
+    // Now delete all entries of found inactive devices in the devices-map
     for (auto it = toDelete.begin(); it != toDelete.end(); ++it)
       devices.erase(*it);
   }
@@ -230,9 +241,11 @@ bool TapiCore::getConnectionList(tapi_lib::GetConnectionList::Request& listReq,
   if (listReq.Get)
   {
     vector<Tapi::Connection*> connectionVec;
+    // Store pointer to all entries in the connections map to a vector
     for (auto it = connections.begin(); it != connections.end(); ++it)
       connectionVec.push_back(&it->second);
     vector<tapi_lib::Connection> msg;
+    // Now iterate through this vector and actually copy the data to a connections-msg-vector
     for (auto it = connectionVec.begin(); it != connectionVec.end(); ++it)
     {
       tapi_lib::Connection connection;
@@ -243,10 +256,12 @@ bool TapiCore::getConnectionList(tapi_lib::GetConnectionList::Request& listReq,
       connection.SubscriberUUID = (*it)->GetSubscriberUUID();
       msg.push_back(connection);
     }
+    // Respond to the request with this connections-msg-vector
     listResp.Connections = msg;
     return true;
   }
   else
+    // The requester sent a bad request
     return false;
 }
 
@@ -276,8 +291,11 @@ void TapiCore::deleteConnection(const std_msgs::String::ConstPtr& del)
 
 void TapiCore::deleteConnection(std::string subscriberFeatureUUID)
 {
+  // Check whether there really is a connection for the delete-request
   if (connections.count(subscriberFeatureUUID) > 0)
   {
+    // There actually is a connection, so send a disconnect message (publisherUUID and publisherFeatureUUID = 0) to the
+    // subscriber
     Tapi::Connection* connection = &connections.at(subscriberFeatureUUID);
     string subscriberUUID = connection->GetSubscriberUUID();
     tapi_lib::Connection msg;
@@ -294,6 +312,8 @@ void TapiCore::deleteConnection(std::string subscriberFeatureUUID)
 
 Tapi::Device* TapiCore::getDeviceByFeatureUUID(string uuid)
 {
+  // Iterate through all devices and see if the device has a feature with the given uuid. If yes, return a pointer to
+  // this device. If nothing is found, return 0.
   for (auto it = devices.begin(); it != devices.end(); ++it)
   {
     if (it->second.GetFeatureByUUID(uuid))
@@ -307,11 +327,14 @@ bool TapiCore::getDevicesSorted(tapi_lib::GetDeviceList::Request& listReq, tapi_
   if (listReq.Get)
   {
     vector<Tapi::Device*> devicesList;
+    // Create a vector with pointers to every element in the devices map
     for (auto it = devices.begin(); it != devices.end(); ++it)
       devicesList.push_back(&it->second);
     if (devicesList.size() > 1)
+      // There is more than one device connected, so sort this list alphabetically
       sort(devicesList.begin(), devicesList.end(), compareDeviceNames);
     vector<tapi_lib::Device> answer;
+    // Iterate through the sorted vector and copy the data of the devices to a vector of Device-messages
     for (auto it = devicesList.begin(); it != devicesList.end(); ++it)
     {
       tapi_lib::Device device;
@@ -324,6 +347,7 @@ bool TapiCore::getDevicesSorted(tapi_lib::GetDeviceList::Request& listReq, tapi_
       device.UUID = (*it)->GetUUID();
       vector<Feature*> features = (*it)->GetSortedFeatures();
       vector<tapi_lib::Feature> featureMsgs;
+      // Also iterate through all features of a device and copy the data to a vector of Feature-messages
       for (auto it2 = features.begin(); it2 != features.end(); ++it2)
       {
         tapi_lib::Feature featureMsg;
@@ -332,19 +356,25 @@ bool TapiCore::getDevicesSorted(tapi_lib::GetDeviceList::Request& listReq, tapi_
         featureMsg.UUID = (*it2)->GetUUID();
         featureMsgs.push_back(featureMsg);
       }
+      // Assign the Feature-messages-vector to the Device-message
       device.Features = featureMsgs;
+      // Add the Device-message to the vector of Device-messages for the response
       answer.push_back(device);
     }
+    // Copy the Device-messages-vector to the response and send the response (automatically done in background)
     listResp.Devices = answer;
     return true;
   }
   else
+    // Wrong request
     return false;
 }
 
 void TapiCore::heartbeatCheck(const ros::TimerEvent& e)
 {
   bool deactivatedDevices = false;
+  // Iterate through all devices and check their last heartbeat time. If this time has passed 2.5 times the
+  // STANDARD_HEARTBEAT_INTERVAL the device is marked as inactive
   for (auto it = devices.begin(); it != devices.end(); ++it)
     if ((it->second.Active()) &&
         (ros::Time::now().toSec() - it->second.GetLastSeen().toSec() > 2.5 * STANDARD_HEARTBEAT_INTERVAL / 1000.0))
@@ -367,12 +397,16 @@ bool TapiCore::hello(tapi_lib::Hello::Request& helloReq, tapi_lib::Hello::Respon
   map<string, Tapi::Feature> features;
   for (unsigned int i = 0; i < helloReq.Features.capacity(); i++)
   {
+    // Generate a new Tapi::Feature for every entry in the Features-vector in the Hello-call and create a map of this
+    // Features.
     Tapi::Feature feature(helloReq.Features[i].FeatureType, helloReq.Features[i].Name, helloReq.Features[i].UUID);
     if (features.count(feature.GetUUID()) == 0)
       features.emplace(feature.GetUUID(), feature);
   }
   if (devices.empty() || devices.count(uuid) == 0)
   {
+    // The device is not currently existing in our "database", so create a new Tapi::Device with this data and place it
+    // into the devices-map
     Tapi::Device device(type, name, uuid, lastSeq, lastSeen, heartbeat, features);
     devices.emplace(uuid, device);
     helloResp.Status = tapi_lib::HelloResponse::StatusOK;
@@ -382,6 +416,7 @@ bool TapiCore::hello(tapi_lib::Hello::Request& helloReq, tapi_lib::Hello::Respon
   }
   else if (devices.count(uuid) == 1)
   {
+    // A device with this uuid already exists in the "database", so just update its data with the received one
     devices.at(uuid).Update(type, name, lastSeq, lastSeen, heartbeat, features);
     helloResp.Status = tapi_lib::HelloResponse::StatusOK;
     helloResp.Heartbeat = heartbeat;
@@ -401,6 +436,7 @@ bool TapiCore::hello(tapi_lib::Hello::Request& helloReq, tapi_lib::Hello::Respon
 
 void TapiCore::sendAllConnections()
 {
+  // Iterate through all connections in the connections-map and send the data over the Config publisher
   for (auto it = connections.begin(); it != connections.end(); ++it)
   {
     tapi_lib::Connection msg;
