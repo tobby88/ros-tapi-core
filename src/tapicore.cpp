@@ -168,7 +168,13 @@ void TapiCore::clearInactive(const std_msgs::Bool::ConstPtr& cl)
 
 bool TapiCore::compareDeviceNames(const Tapi::Device* first, const Tapi::Device* second)
 {
-  return first->GetName() < second->GetName();
+  string temp1, temp2;
+  temp1 = first->GetName();
+  temp2 = second->GetName();
+  transform(temp1.begin(), temp1.end(), temp1.begin(), ::towlower);
+  transform(temp2.begin(), temp2.end(), temp2.begin(), ::towlower);
+  bool result = temp1 < temp2;
+  return result;
 }
 
 void TapiCore::connectFeatures(const tapi_lib::Connect::ConstPtr& con)
