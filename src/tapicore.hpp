@@ -77,7 +77,7 @@ namespace Tapi
  * Also it provides services to get information about linked devices and its connections.
  *
  * \author Tobias Holst
- * \version 2.4.0
+ * \version 2.4.1
  */
 class TapiCore
 {
