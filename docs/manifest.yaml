@@ -14,4 +14,4 @@ msgs: []
 package_type: package
 repo_url: https://github.com/tobby88/ros-tapi-core
 srvs: []
-url: ''
+url: https://tobby88.github.io/ros-tapi-core/html/
