@@ -226,6 +226,7 @@ private:
    * \param second Pointer to the second device to compare
    * \return \c true if the first device's name has to be above the second's device name in an alphabetically sort, \c
    * false when it's vice versa
+   * \see \c Tapi::Device in the \c tapi_lib package
    */
   static bool compareDeviceNames(const Tapi::Device* first, const Tapi::Device* second);
 
@@ -308,6 +309,7 @@ private:
    * \return \c true if the response has been generated and sent, \c false if the request was \c false.
    * \see \c Tapi::Device in \c tapi_lib package
    * \see \c Device.msg and \c GetDeviceList.srv in \c tapi_lib package
+   * \see Tapi::TapiCore::compareDeviceNames
    */
   bool getDevicesSorted(tapi_lib::GetDeviceList::Request& listReq, tapi_lib::GetDeviceList::Response& listResp);
 
