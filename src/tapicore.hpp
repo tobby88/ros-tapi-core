@@ -200,7 +200,7 @@ private:
 
   /*! \brief Send a disconnect message for every device's feature and clear the maps of Tapi::TapiCore::connections and
    * Tapi::TapiCore::devices if a \c true is received on the subscriber.
-   * \param cl The message waiting in the ros message queue where the data is stored. Has to be a \true to actually
+   * \param cl The message waiting in the ros message queue where the data is stored. Has to be a \c true to actually
    * clear all data.
    * \see clearAllSub
    */
@@ -213,7 +213,7 @@ private:
    * all other devices so they delete their connection to this inactive device. Then all data about this connections and
    * these inactive devices is deleted in the core.
    * To reconnect these inactive devices have to call the Hello-service again.
-   * \param cl The message waiting in the ros message queue where the data is stored. Has to be a \true to actually
+   * \param cl The message waiting in the ros message queue where the data is stored. Has to be a \c true to actually
    * clear the data of inactive devices.
    * \see clearInactiveSub
    * \see Tapi::TapiCore::helloServ
