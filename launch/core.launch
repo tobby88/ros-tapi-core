@@ -1,0 +1,3 @@
+<launch>
+  <node pkg="tapi_core" type="tapi" name="tapi" />
+</launch>
